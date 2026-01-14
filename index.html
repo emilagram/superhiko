@@ -3,73 +3,114 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
-  <title>Super Hiko vs Friends</title>
+  <title>Super Hiko</title>
   <style>
-    html,body{height:100%;margin:0;background:#070b14;overflow:hidden;font-family:system-ui,Arial;color:#eaf0ff}
-    #menu{
-      position:fixed;inset:0;display:flex;align-items:center;justify-content:center;
-      background:radial-gradient(1200px 700px at 50% 0%, #14245a 0%, #070b14 60%);
-      padding:16px; box-sizing:border-box;
+    :root{
+      --bg1:#0a1030; --bg2:#070b14;
+      --panel: rgba(18,26,58,.88);
+      --line: rgba(255,255,255,.14);
+      --txt:#eaf0ff;
+      --muted: rgba(255,255,255,.82);
+      --shadow: 0 16px 45px rgba(0,0,0,.55);
     }
+    html,body{height:100%;margin:0;font-family:system-ui,Arial;background:radial-gradient(1200px 700px at 50% 0%, var(--bg1), var(--bg2)); color:var(--txt); overflow:hidden;}
+    /* MENU */
+    #menu{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;padding:16px;box-sizing:border-box;}
     .panel{
-      width:min(980px,96vw);
-      border:1px solid rgba(255,255,255,.14);
+      width:min(900px, 94vw);
+      border:1px solid var(--line);
       border-radius:18px;
       background:linear-gradient(180deg, rgba(24,36,72,.92), rgba(10,14,30,.92));
-      box-shadow:0 16px 45px rgba(0,0,0,.55);
+      box-shadow:var(--shadow);
       padding:16px; position:relative; overflow:hidden;
     }
     .panel:before{
       content:""; position:absolute; inset:-60px;
       background:
-        radial-gradient(240px 240px at 20% 15%, rgba(80,180,120,.18), transparent 62%),
-        radial-gradient(300px 300px at 80% 25%, rgba(70,120,220,.20), transparent 65%),
-        radial-gradient(320px 320px at 50% 110%, rgba(220,80,170,.14), transparent 65%);
+        radial-gradient(260px 260px at 18% 18%, rgba(80,180,120,.18), transparent 62%),
+        radial-gradient(320px 320px at 80% 24%, rgba(70,120,220,.20), transparent 65%),
+        radial-gradient(320px 320px at 50% 112%, rgba(220,80,170,.14), transparent 65%);
       pointer-events:none;
     }
-    .top{display:flex;gap:12px;flex-wrap:wrap;align-items:flex-start;justify-content:space-between;position:relative}
-    .brand{display:flex;gap:10px;align-items:center}
-    .badge{width:44px;height:44px;border-radius:14px;display:grid;place-items:center;font-weight:1000;
-      background:linear-gradient(135deg, rgba(80,180,120,.95), rgba(70,120,220,.95));
-      box-shadow:0 10px 25px rgba(0,0,0,.35);
-    }
-    h1{margin:0;font-size:28px;font-weight:1000}
-    .sub{margin:2px 0 0;opacity:.9;font-weight:800}
-    .help{
-      max-width:460px;
+    .enemies{
+      position:relative;
+      margin:0 0 10px;
+      padding:10px 12px;
       border:1px solid rgba(255,255,255,.12);
+      border-radius:14px;
       background:rgba(255,255,255,.04);
-      border-radius:14px;
-      padding:10px 12px;
-      font-size:13px; line-height:1.35;
-      color:rgba(255,255,255,.82);
+      font-size:12px;
+      line-height:1.35;
+      color:var(--muted);
+      display:flex; flex-wrap:wrap; gap:8px 10px;
     }
-    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:9px;margin:12px 0 14px;position:relative}
-    .card{
-      border-radius:14px;
-      border:1px solid rgba(255,255,255,.16);
-      padding:10px 12px;
-      box-shadow:0 10px 18px rgba(0,0,0,.18);
+    .tag{
+      padding:4px 8px;
+      border-radius:999px;
+      border:1px solid rgba(255,255,255,.14);
+      background:rgba(0,0,0,.18);
+      font-weight:800;
+      letter-spacing:.2px;
+      user-select:none;
+    }
+    .startText{
+      position:relative;
+      margin:8px 0 0;
+      padding:16px 14px;
+      border-radius:16px;
+      border:1px solid rgba(255,255,255,.18);
+      background:linear-gradient(135deg, rgba(80,180,120,.25), rgba(70,120,220,.22));
+      text-align:center;
       font-weight:1000;
-      background:rgba(255,255,255,.04);
-    }
-    .card small{display:block;margin-top:3px;font-weight:800;opacity:.92;font-size:12px}
-    .go{
-      width:100%; border-radius:16px; border:1px solid rgba(255,255,255,.22);
-      padding:14px 16px; cursor:pointer; font-size:18px; font-weight:1000; color:#fff;
-      background:linear-gradient(135deg, rgba(80,180,120,.95), rgba(70,120,220,.95));
+      font-size:24px;
+      letter-spacing:.6px;
+      cursor:pointer;
+      user-select:none;
       box-shadow:0 14px 30px rgba(0,0,0,.35);
     }
-    .note{margin:10px 0 0;font-size:12px;opacity:.75;position:relative}
+    .startHint{
+      position:relative;
+      margin:8px 0 0;
+      font-size:12px;
+      opacity:.75;
+      text-align:center;
+    }
 
-    /* Game */
-    #gameWrap{position:fixed;inset:0;display:none;background:#000;}
-    canvas{position:absolute;inset:0;width:100vw;height:100vh;image-rendering:pixelated}
-
+    /* GAME LAYOUT (comfortable, not fullscreen) */
+    #gameWrap{
+      position:fixed; inset:0;
+      display:none;
+      align-items:center; justify-content:center;
+      padding:12px; box-sizing:border-box;
+    }
+    .gameShell{
+      width:min(980px, 100%);
+      height:100%;
+      max-height: 920px;
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+    }
+    /* Canvas area */
+    .screen{
+      position:relative;
+      flex: 1;
+      border-radius:18px;
+      border:1px solid rgba(255,255,255,.12);
+      overflow:hidden;
+      box-shadow:var(--shadow);
+      background:#000;
+    }
+    canvas{
+      position:absolute; inset:0;
+      width:100%; height:100%;
+      image-rendering:pixelated;
+    }
     .hud{
-      position:absolute;top:10px;left:10px;right:10px;
-      display:flex;align-items:center;justify-content:space-between;gap:10px;
-      z-index:5; pointer-events:none;
+      position:absolute; left:10px; right:10px; top:10px;
+      display:flex; align-items:center; justify-content:space-between;
+      gap:10px; z-index:5;
+      pointer-events:none;
     }
     .hud .left, .hud .right{display:flex;gap:10px;align-items:center;pointer-events:auto}
     .btn{
@@ -78,15 +119,16 @@
       padding:10px 12px;border-radius:12px;cursor:pointer;font-weight:1000;
     }
     .scoreBox{
-      background:rgba(0,0,0,.28);
+      background:rgba(0,0,0,.30);
       border:1px solid rgba(255,255,255,.12);
       padding:10px 12px;border-radius:12px;font-weight:1000;
       box-shadow:0 10px 18px rgba(0,0,0,.18);
     }
 
-    /* Overlay welcome */
+    /* Overlay end */
     #overlay{
-      position:absolute; inset:0; display:none; align-items:flex-end; justify-content:center;
+      position:absolute; inset:0;
+      display:none; align-items:flex-end; justify-content:center;
       padding:18px; z-index:6; pointer-events:none;
     }
     #overlay .box{
@@ -101,54 +143,143 @@
     #overlay h2{margin:0;font-size:32px;font-weight:1000}
     #overlay p{margin:6px 0 0;font-size:18px;font-weight:900;opacity:.92}
 
-    @media (max-width:520px){
-      h1{font-size:24px}
-      .go{font-size:17px}
+    /* Nintendo Controller */
+    .controller{
+      display:flex; align-items:center; justify-content:space-between;
+      gap:12px;
+      padding:12px;
+      border-radius:18px;
+      border:1px solid rgba(255,255,255,.12);
+      background:linear-gradient(180deg, rgba(18,26,58,.72), rgba(0,0,0,.20));
+      box-shadow:0 12px 26px rgba(0,0,0,.35);
+      user-select:none; -webkit-user-select:none;
+      touch-action: none;
+    }
+    .pad{
+      width:180px; height:120px;
+      display:grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      grid-template-rows: 1fr 1fr 1fr;
+      gap:8px;
+      align-items:center;
+      justify-items:center;
+    }
+    .dkey{
+      width:54px; height:54px; border-radius:16px;
+      border:1px solid rgba(255,255,255,.14);
+      background:rgba(0,0,0,.25);
+      box-shadow: inset 0 0 0 2px rgba(255,255,255,.06), 0 10px 18px rgba(0,0,0,.25);
+      display:grid; place-items:center;
+      font-weight:1000;
+      opacity:.95;
+    }
+    .dkey:active, .akey:active { transform: translateY(1px); }
+    .dkey.on, .akey.on{ outline: 3px solid rgba(80,180,120,.55); }
+
+    .centerBrand{
+      flex:1;
+      text-align:center;
+      font-weight:1000;
+      opacity:.9;
+      letter-spacing:.3px;
+      line-height:1.2;
+    }
+    .centerBrand small{display:block;opacity:.75;font-weight:900;margin-top:4px}
+
+    .buttons{
+      width:220px;
+      display:flex;
+      justify-content:flex-end;
+      gap:12px;
+      align-items:center;
+    }
+    .akey{
+      width:84px; height:84px; border-radius:999px;
+      border:1px solid rgba(255,255,255,.14);
+      background:linear-gradient(135deg, rgba(255,90,120,.35), rgba(255,190,60,.22));
+      box-shadow: inset 0 0 0 2px rgba(255,255,255,.06), 0 12px 22px rgba(0,0,0,.28);
+      display:grid; place-items:center;
+      font-weight:1000; font-size:18px;
+    }
+    .smallBtn{
+      width:74px; height:44px; border-radius:14px;
+      border:1px solid rgba(255,255,255,.14);
+      background:rgba(0,0,0,.22);
+      box-shadow: inset 0 0 0 2px rgba(255,255,255,.05), 0 10px 18px rgba(0,0,0,.22);
+      display:grid; place-items:center;
+      font-weight:1000; font-size:12px;
+      opacity:.92;
+    }
+
+    @media (max-width:560px){
+      .startText{font-size:20px}
+      .controller{padding:10px}
+      .pad{width:150px;height:110px}
+      .dkey{width:48px;height:48px}
+      .buttons{width:180px}
+      .akey{width:74px;height:74px}
     }
   </style>
 </head>
 <body>
+
   <div id="menu">
     <div class="panel">
-      <div class="top">
-        <div class="brand">
-          <div class="badge">H</div>
-          <div>
-            <h1>WELCOME</h1>
-            <div class="sub">Super Hiko vs. Friends</div>
-          </div>
-        </div>
-        <div class="help">
-          <b>Телефон:</b> тап по экрану — прыжок.<br>
-          Удерживай слева — тормоз, справа — ускорение.<br>
-          <b>Цель:</b> пройти линию флага у дома Алёны ❤
-        </div>
+      <div class="enemies" id="enemyTags"></div>
+
+      <div class="startText" id="startText">
+        ОТВЕДИ ХИКМЕТА К ДОМУ АЛЁНЫ
       </div>
-
-      <div class="grid" id="list"></div>
-
-      <button class="go" id="startBtn">ПОЕХАЛИ К ДОМУ АЛЁНЫ</button>
-      <div class="note">Сверху по врагу: <b>BOOM</b> и +3 очка. Сбоку: уменьшаемся (3 жизни).</div>
+      <div class="startHint">Нажми на текст выше, чтобы начать</div>
     </div>
   </div>
 
   <div id="gameWrap">
-    <canvas id="c" width="960" height="540"></canvas>
+    <div class="gameShell">
+      <div class="screen">
+        <canvas id="c"></canvas>
 
-    <div class="hud">
-      <div class="left">
-        <button class="btn" id="back">⬅</button>
-        <button class="btn" id="restart">⟲</button>
-      </div>
-      <div class="right">
-        <div class="scoreBox" id="hudText">Счёт: 0 • ❤❤❤</div>
-      </div>
-    </div>
+        <div class="hud">
+          <div class="left">
+            <button class="btn" id="back">⬅</button>
+            <button class="btn" id="restart">⟲</button>
+          </div>
+          <div class="right">
+            <div class="scoreBox" id="hudText">Счёт: 0 • ❤❤❤</div>
+          </div>
+        </div>
 
-    <div id="overlay">
-      <div class="box">
-        <h2>WELCOME KOXANIE ❤</h2>
-        <p id="finalScore">Счёт: 0</p>
+        <div id="overlay">
+          <div class="box">
+            <h2>WELCOME KOXANIE ❤</h2>
+            <p id="finalScore">Счёт: 0</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Nintendo controller -->
+      <div class="controller" id="controller">
+        <div class="pad">
+          <div></div>
+          <div class="dkey" id="up">▲</div>
+          <div></div>
+          <div class="dkey" id="left">◀</div>
+          <div class="dkey" id="mid">●</div>
+          <div class="dkey" id="right">▶</div>
+          <div></div>
+          <div class="dkey" id="down">▼</div>
+          <div></div>
+        </div>
+
+        <div class="centerBrand">
+          SUPER HIKO
+          <small>Jump + направления (как Nintendo)</small>
+        </div>
+
+        <div class="buttons">
+          <div class="smallBtn" id="brakeBtn">BRAKE</div>
+          <div class="akey" id="jumpBtn">JUMP</div>
+        </div>
       </div>
     </div>
   </div>
@@ -157,7 +288,7 @@
 (() => {
   "use strict";
 
-  // ---------- Data ----------
+  // ----- Friends -----
   const friends = [
     {name:"Zloy Stas", kind:"blond_mustache_man", lane:"air",   speed:360, motion:"dash"},
     {name:"Arkadağ", kind:"hairy_man",           lane:"ground",speed:300, motion:"steady"},
@@ -174,29 +305,19 @@
     {name:"Aşkiyom", kind:"beer",                lane:"mid",   speed:320, motion:"zigzag"},
   ];
 
-  // Fill menu list
-  const list = document.getElementById("list");
-  const palette = [
-    ["#57d38e","#2b7bff"], ["#ff8a4a","#ff4aa2"], ["#ffd166","#06d6a0"],
-    ["#a78bfa","#22d3ee"], ["#fb7185","#60a5fa"], ["#f59e0b","#10b981"],
-    ["#34d399","#f472b6"], ["#60a5fa","#f59e0b"], ["#22c55e","#a78bfa"],
-    ["#f472b6","#38bdf8"], ["#f97316","#84cc16"], ["#e879f9","#22c55e"],
-    ["#38bdf8","#fda4af"],
-  ];
-  friends.forEach((e,i)=>{
-    const [a,b]=palette[i%palette.length];
-    const d=document.createElement("div");
-    d.className="card";
-    d.style.background=`linear-gradient(135deg, ${a}30, ${b}20)`;
-    d.style.borderColor=`${a}66`;
-    d.innerHTML = `${e.name}<small>${e.lane==="ground"?"земля":e.lane==="mid"?"середина":"воздух"} • каждые 3 сек</small>`;
-    list.appendChild(d);
+  // Menu tags (small names only)
+  const enemyTags = document.getElementById("enemyTags");
+  friends.forEach(e=>{
+    const t=document.createElement("div");
+    t.className="tag";
+    t.textContent=e.name;
+    enemyTags.appendChild(t);
   });
 
-  // ---------- DOM ----------
+  // ----- DOM -----
   const menu = document.getElementById("menu");
+  const startText = document.getElementById("startText");
   const gameWrap = document.getElementById("gameWrap");
-  const startBtn = document.getElementById("startBtn");
   const backBtn = document.getElementById("back");
   const restartBtn = document.getElementById("restart");
   const hudText = document.getElementById("hudText");
@@ -206,25 +327,32 @@
   const canvas = document.getElementById("c");
   const ctx = canvas.getContext("2d");
 
-  // ---------- Fullscreen attempt ----------
-  async function tryFullscreen(){
-    try{
-      const el = document.documentElement;
-      if (el.requestFullscreen) await el.requestFullscreen();
-      else if (el.webkitRequestFullscreen) await el.webkitRequestFullscreen();
-    }catch(_){}
+  // Controller buttons
+  const leftKey = document.getElementById("left");
+  const rightKey = document.getElementById("right");
+  const upKey = document.getElementById("up");
+  const downKey = document.getElementById("down");
+  const jumpBtn = document.getElementById("jumpBtn");
+  const brakeBtn = document.getElementById("brakeBtn");
+
+  // ----- Sizing (comfortable phone) -----
+  function resizeCanvas(){
+    const rect = canvas.getBoundingClientRect();
+    const dpr = Math.min(2, window.devicePixelRatio || 1);
+    canvas.width = Math.max(1, Math.floor(rect.width * dpr));
+    canvas.height = Math.max(1, Math.floor(rect.height * dpr));
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+    ctx.imageSmoothingEnabled = false;
   }
+  window.addEventListener("resize", resizeCanvas);
 
-  // ---------- Game constants ----------
-  const BASE_W = 960, BASE_H = 540;
+  // ----- World -----
+  const TILE=32;
+  const MAP_W=210, MAP_H=18;
+  const WORLD_W=MAP_W*TILE, WORLD_H=MAP_H*TILE;
 
-  const TILE = 32;
-  const MAP_W = 210, MAP_H = 18;
-  const WORLD_W = MAP_W*TILE, WORLD_H = MAP_H*TILE;
+  const GRAV=1850;
 
-  const GRAV = 1850;
-
-  // Simple tile map
   const map = Array.from({length:MAP_H},()=>Array(MAP_W).fill(0));
   for(let x=0;x<MAP_W;x++){ map[MAP_H-1][x]=1; map[MAP_H-2][x]=1; }
   function putRect(tx,ty,tw,th){
@@ -234,45 +362,43 @@
   }
   const tileAt=(tx,ty)=> (tx<0||ty<0||tx>=MAP_W||ty>=MAP_H)?0:map[ty][tx];
 
-  // Platforms and landmarks
+  // Platforms & final
   putRect(14, MAP_H-4, 10, 2);        // Bornova ovası
   putRect(34, MAP_H-2-5, 10, 5);      // Bayraklı üst geçit
   putRect(58, MAP_H-2-3, 12, 3);      // Karşıyaka otoban girişi
   putRect(84, MAP_H-2-4, 12, 4);      // Alaybey girişi
   putRect(104, MAP_H-2-2, 14, 2);     // Karşıyaka
 
-  // Final rise + safe walk + castle
-  const LAST_RISE_TX = 132;
+  const LAST_RISE_TX=132;
   putRect(LAST_RISE_TX, MAP_H-2-3, 10, 3);
 
-  const SAFE_WALK_TX = LAST_RISE_TX + 10;
+  const SAFE_WALK_TX=LAST_RISE_TX+10;
   putRect(SAFE_WALK_TX, MAP_H-2-2, 6, 2);
 
-  const CASTLE_TX = SAFE_WALK_TX + 6;
+  const CASTLE_TX=SAFE_WALK_TX+6;
   putRect(CASTLE_TX, MAP_H-6, 20, 1);
 
-  const FLAG_LINE_X = (SAFE_WALK_TX*TILE) - 8;
-  const STOP_OBS_X = (LAST_RISE_TX*TILE) - 40;
+  const FLAG_LINE_X=(SAFE_WALK_TX*TILE)-8;
+  const STOP_OBS_X=(LAST_RISE_TX*TILE)-40;
 
-  const castle = { x:(CASTLE_TX+8)*TILE, y:(MAP_H-2)*TILE, w:320, h:290 };
-  const pole = { x:(CASTLE_TX+17)*TILE + TILE/2, topY:(MAP_H-10)*TILE, bottomY:(MAP_H-2)*TILE };
+  const castle={ x:(CASTLE_TX+8)*TILE, y:(MAP_H-2)*TILE, w:320, h:290 };
+  const pole={ x:(CASTLE_TX+17)*TILE + TILE/2, topY:(MAP_H-10)*TILE, bottomY:(MAP_H-2)*TILE };
 
-  // ---------- Player (2x bigger) ----------
-  const stages = [
+  // ----- Player -----
+  const stages=[
     {name:"Super Hiko", w:76, h:108, jump:1180},
     {name:"Midi Hiko",  w:60, h:84,  jump:1120},
     {name:"Mini Hiko",  w:52, h:68,  jump:1080},
   ];
-  const player = { x:70, y:0, vx:0, vy:0, onGround:false, stage:0, lives:3, iFrames:0 };
-
+  const player={ x:70, y:0, vx:0, vy:0, onGround:false, stage:0, lives:3, iFrames:0 };
   const pW=()=>stages[player.stage].w;
   const pH=()=>stages[player.stage].h;
   const pJump=()=>stages[player.stage].jump;
 
-  // ---------- Camera ----------
-  const cam = { x:0, y:0 };
+  // ----- Camera -----
+  const cam={ x:0, y:0 };
 
-  // ---------- Utils ----------
+  // ----- Utils -----
   const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
   const aabb=(ax,ay,aw,ah,bx,by,bw,bh)=> ax<bx+bw && ax+aw>bx && ay<by+bh && ay+ah>by;
 
@@ -319,38 +445,82 @@
     if(player.y > WORLD_H + 200) resetGame();
   }
 
-  // ---------- Controls (no on-screen hints) ----------
-  let hold = "none";       // brake | boost | none
-  let jumpQueued=false;
+  // ----- Controller state -----
+  const input = {
+    left:false, right:false, up:false, down:false,
+    jumpPressed:false,
+    brake:false
+  };
 
-  function onPointerDown(e){
+  function setBtnState(el, on){
+    el.classList.toggle("on", !!on);
+  }
+
+  // Pointer handlers for keys
+  function bindHold(el, onDown, onUp){
+    const down = (e)=>{ e.preventDefault(); onDown(); };
+    const up   = (e)=>{ e.preventDefault(); onUp(); };
+    el.addEventListener("pointerdown", down, {passive:false});
+    el.addEventListener("pointerup", up, {passive:false});
+    el.addEventListener("pointercancel", up, {passive:false});
+    el.addEventListener("pointerleave", up, {passive:false});
+  }
+
+  bindHold(leftKey,  ()=>{input.left=true;  setBtnState(leftKey,true);},  ()=>{input.left=false;  setBtnState(leftKey,false);} );
+  bindHold(rightKey, ()=>{input.right=true; setBtnState(rightKey,true);}, ()=>{input.right=false; setBtnState(rightKey,false);} );
+  bindHold(upKey,    ()=>{input.up=true;    setBtnState(upKey,true);},    ()=>{input.up=false;    setBtnState(upKey,false);} );
+  bindHold(downKey,  ()=>{input.down=true;  setBtnState(downKey,true);},  ()=>{input.down=false;  setBtnState(downKey,false);} );
+
+  // Jump: press
+  bindHold(jumpBtn,
+    ()=>{ input.jumpPressed=true; setBtnState(jumpBtn,true); },
+    ()=>{ input.jumpPressed=false; setBtnState(jumpBtn,false); }
+  );
+
+  // Brake
+  bindHold(brakeBtn,
+    ()=>{ input.brake=true; setBtnState(brakeBtn,true); },
+    ()=>{ input.brake=false; setBtnState(brakeBtn,false); }
+  );
+
+  // Also allow tap on canvas to jump (optional comfort)
+  canvas.addEventListener("pointerdown", (e)=>{
     if(!running) return;
-    const rect = canvas.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const zone = x / rect.width;
-    if(zone < 0.33) hold="brake";
-    else if(zone > 0.66) hold="boost";
-    else { jumpQueued=true; hold="none"; }
+    input.jumpPressed=true;
+    setBtnState(jumpBtn,true);
+    setTimeout(()=>{ input.jumpPressed=false; setBtnState(jumpBtn,false); }, 90);
+  }, {passive:true});
+
+  // Prevent page scroll while holding controller
+  document.getElementById("controller").addEventListener("touchmove", (e)=>e.preventDefault(), {passive:false});
+
+  // ----- Movement model -----
+  function applyMovement(dt){
+    // left/right control like classic
+    const accel = 1400;
+    const maxSpeed = input.brake ? 220 : 520;
+    const friction = player.onGround ? 0.82 : 0.94;
+
+    if(input.left)  player.vx -= accel*dt;
+    if(input.right) player.vx += accel*dt;
+
+    // cap
+    player.vx = clamp(player.vx, -maxSpeed, maxSpeed);
+
+    // friction when no key
+    if(!input.left && !input.right){
+      player.vx *= Math.pow(friction, dt*60);
+      if(Math.abs(player.vx)<8) player.vx=0;
+    }
+
+    // jump
+    if(input.jumpPressed && player.onGround){
+      player.vy = -pJump();
+      player.onGround=false;
+    }
   }
-  function onPointerUp(){ hold="none"; }
 
-  canvas.addEventListener("pointerdown", onPointerDown, {passive:true});
-  canvas.addEventListener("pointerup", onPointerUp, {passive:true});
-  canvas.addEventListener("pointercancel", onPointerUp, {passive:true});
-
-  // prevent scroll while playing
-  window.addEventListener("touchmove", (e)=>{ if(running) e.preventDefault(); }, {passive:false});
-
-  function autoRun(dt){
-    const base=340, boost=620, brake=150;
-    let target=base;
-    if(hold==="boost") target=boost;
-    if(hold==="brake") target=brake;
-    const k=10;
-    player.vx += (target - player.vx) * (1 - Math.exp(-k*dt));
-  }
-
-  // ---------- Obstacles ----------
+  // ----- Obstacles -----
   const obstacles=[];
   const activeNames=new Set();
   const lastSpawn=new Map();
@@ -367,34 +537,38 @@
     if(kind==="angel") return {w:150,h:150};
     return {w:140,h:140};
   }
-
   function laneY(lane,h){
     const groundY=(MAP_H-2)*TILE;
     if(lane==="ground") return groundY - h;
     if(lane==="mid") return groundY - h - (120 + Math.random()*60);
     return groundY - h - (210 + Math.random()*110);
   }
-
   function canSpawn(name, time){
     if(activeNames.has(name)) return false;
     const last=lastSpawn.get(name) ?? -9999;
-    return (time-last) >= 2; // allow repeats later, but not immediate duplicates
+    return (time-last) >= 2;
   }
-
   function spawnOne(time){
-    // pick next friend that can spawn
     for(let tries=0;tries<friends.length;tries++){
       const f = friends[spawnIndex % friends.length];
       spawnIndex++;
-      if(!canSpawn(f.name, time)) continue;
+      if(!canSpawn(f.name,time)) continue;
 
-      const sz = obsSize(f.kind);
-      const baseY = laneY(f.lane, sz.h);
-      const startX = cam.x + BASE_W + 220 + Math.random()*140;
+      const sz=obsSize(f.kind);
+      const baseY=laneY(f.lane, sz.h);
 
-      const o = {
+      // random spawn origin (different places)
+      const origin = Math.random();
+      let startX = cam.x + canvas.clientWidth + 260 + Math.random()*160;
+      let y = baseY;
+
+      if(origin < 0.33){ y = baseY; }
+      else if(origin < 0.66){ y = baseY - (80 + Math.random()*90); }
+      else { y = baseY - (150 + Math.random()*140); }
+
+      const o={
         name:f.name, kind:f.kind, motion:f.motion,
-        x:startX, baseY, y:baseY,
+        x:startX, baseY, y,
         w:sz.w, h:sz.h,
         vx:-f.speed, vy:0,
         t:0, spin:0,
@@ -402,25 +576,21 @@
         zigFreq:2.2+Math.random()*1.2,
         landed:false
       };
-
-      // motion init
-      if(o.motion==="dive"){ o.y = 40 + Math.random()*120; o.vy=0; o.landed=false; }
+      if(o.motion==="dive"){ o.y = 30 + Math.random()*140; o.vy=0; o.landed=false; }
       if(o.motion==="float"){ o.y = baseY - (120 + Math.random()*140); }
 
       obstacles.push(o);
       activeNames.add(o.name);
-      lastSpawn.set(o.name, time);
+      lastSpawn.set(o.name,time);
       return;
     }
   }
-
   function spawnWave(time){
-    // always 1 obstacle every 3 seconds + sometimes add 1-2 extra for group
+    // always one, sometimes group (2-3)
     spawnOne(time);
-    if(Math.random()<0.45) spawnOne(time+0.01);
-    if(Math.random()<0.22) spawnOne(time+0.02);
+    if(Math.random()<0.55) spawnOne(time+0.01);
+    if(Math.random()<0.25) spawnOne(time+0.02);
   }
-
   function updateObstacles(dt){
     for(const o of obstacles){
       o.t += dt;
@@ -428,32 +598,32 @@
 
       if(o.motion==="zigzag"){
         o.y = o.baseY + Math.sin(o.t*o.zigFreq)*o.zigAmp;
-      }else if(o.motion==="float"){
+      } else if(o.motion==="float"){
         o.y = o.baseY + Math.sin(o.t*3.0)*34;
         const pulse = 0.80 + 0.20*Math.sin(o.t*1.2);
         o.x += (o.vx*(pulse-1))*dt;
-      }else if(o.motion==="dive"){
+      } else if(o.motion==="dive"){
         o.vy += 1450*dt;
         o.y += o.vy*dt;
         if(!o.landed && o.y >= o.baseY){
-          o.y = o.baseY; o.vy=0; o.landed=true;
+          o.y=o.baseY; o.vy=0; o.landed=true;
         }
         if(o.landed) o.y = o.baseY + Math.sin(o.t*2.3)*14;
-      }else if(o.motion==="drift"){
+      } else if(o.motion==="drift"){
         o.y = o.baseY + Math.sin(o.t*2.0)*26;
         o.x += Math.sin(o.t*1.5)*22*dt;
-      }else if(o.motion==="wobble"){
+      } else if(o.motion==="wobble"){
         o.y = o.baseY + Math.sin(o.t*2.8)*22;
-      }else if(o.motion==="spin"){
+      } else if(o.motion==="spin"){
         o.spin += dt*6.2;
         o.y = o.baseY + Math.sin(o.t*2.3)*20;
-      }else if(o.motion==="bump"){
+      } else if(o.motion==="bump"){
         o.y = o.baseY + Math.abs(Math.sin(o.t*3.2)) * -14;
-      }else if(o.motion==="heavy"){
+      } else if(o.motion==="heavy"){
         const stop = (Math.sin(o.t*1.1)>0.86) ? 0.15 : 1.0;
         o.x += o.vx*dt*(stop-1);
         o.y = o.baseY;
-      }else if(o.motion==="dash"){
+      } else if(o.motion==="dash"){
         const dash = 0.80 + 0.45*Math.max(0, Math.sin(o.t*2.1));
         o.x += o.vx*dt*(dash-1);
         o.y = o.baseY + Math.sin(o.t*2.9)*16;
@@ -462,15 +632,15 @@
 
     // cleanup
     for(let i=obstacles.length-1;i>=0;i--){
-      const o=obstacles[i];
-      if(o.x < cam.x - 600){
+      if(obstacles[i].x < cam.x - 600){
+        const name=obstacles[i].name;
         obstacles.splice(i,1);
-        activeNames.delete(o.name);
+        activeNames.delete(name);
       }
     }
   }
 
-  // ---------- FX BOOM ----------
+  // ----- FX BOOM -----
   const fx=[];
   function boom(x,y){
     const f={x,y,t:0,life:0.6,sparks:[]};
@@ -492,7 +662,7 @@
     for(let i=fx.length-1;i>=0;i--) if(fx[i].t>fx[i].life) fx.splice(i,1);
   }
 
-  // ---------- Game state ----------
+  // ----- Game state -----
   let running=false;
   let score=0;
   let flagTriggered=false;
@@ -522,8 +692,8 @@
 
   function handleHits(){
     if(flagTriggered) return;
-    const pw=pW(), ph=pH();
 
+    const pw=pW(), ph=pH();
     for(const o of obstacles){
       if(!aabb(player.x,player.y,pw,ph, o.x,o.y,o.w,o.h)) continue;
 
@@ -534,8 +704,7 @@
       if(topHit){
         boom(o.x+o.w/2, o.y);
         score += 3;
-        // remove obstacle
-        const idx = obstacles.indexOf(o);
+        const idx=obstacles.indexOf(o);
         if(idx>=0) obstacles.splice(idx,1);
         activeNames.delete(o.name);
         player.vy = -650;
@@ -546,7 +715,7 @@
     }
   }
 
-  // ---------- Drawing helpers ----------
+  // ----- Drawing -----
   function roundRect(x,y,w,h,r){
     const rr=Math.min(r,w/2,h/2);
     ctx.beginPath();
@@ -558,37 +727,28 @@
     ctx.closePath();
   }
 
-  function setScale(){
-    const cw = window.innerWidth;
-    const ch = window.innerHeight;
-    const s = Math.min(cw/BASE_W, ch/BASE_H);
-    ctx.setTransform(s,0,0,s, (cw - BASE_W*s)/2, (ch - BASE_H*s)/2);
-    ctx.imageSmoothingEnabled=false;
-  }
-
-  function drawBackground(){
-    // sky->sea->ground bands
-    const g = ctx.createLinearGradient(0,0,0,BASE_H);
+  function drawBackground(vw,vh){
+    // sky->sea->ground
+    const g = ctx.createLinearGradient(0,0,0,vh);
     g.addColorStop(0, "#6bb6ff");
     g.addColorStop(0.50, "#bfe6ff");
     g.addColorStop(0.505, "#7bdc6f");
     g.addColorStop(1, "#49b85a");
     ctx.fillStyle=g;
-    ctx.fillRect(0,0,BASE_W,BASE_H);
+    ctx.fillRect(0,0,vw,vh);
 
-    // sea label (right)
     ctx.globalAlpha=0.88;
     ctx.fillStyle="rgba(0,40,90,.35)";
-    ctx.fillRect(0,92,BASE_W,44);
+    ctx.fillRect(0,92,vw,44);
     ctx.fillStyle="rgba(255,255,255,.92)";
     ctx.font="1000 22px system-ui";
     ctx.fillText("Ege körfez sahil", 18, 122);
     ctx.globalAlpha=1;
   }
 
-  function drawTiles(){
+  function drawTiles(vw,vh){
     const startTx=Math.floor(cam.x/TILE);
-    const endTx=Math.ceil((cam.x+BASE_W)/TILE);
+    const endTx=Math.ceil((cam.x+vw)/TILE);
     for(let ty=0;ty<MAP_H;ty++){
       for(let tx=startTx;tx<=endTx;tx++){
         if(tileAt(tx,ty)!==1) continue;
@@ -605,7 +765,6 @@
 
   function label(wx,wy,text){
     const sx=wx-cam.x, sy=wy-cam.y;
-    if(sx<-400||sx>BASE_W+400) return;
     ctx.font="1000 16px system-ui";
     const tw=ctx.measureText(text).width;
     ctx.globalAlpha=0.92;
@@ -624,15 +783,14 @@
     label(104*TILE, (MAP_H-2-2)*TILE, "Karşıyaka");
   }
 
-  function drawFlagLine(){
+  function drawFlagLine(vw,vh){
     const x = FLAG_LINE_X - cam.x;
-    if(x<-60||x>BASE_W+60) return;
     ctx.save();
     ctx.globalAlpha=0.88;
     ctx.strokeStyle="rgba(255,255,255,.95)";
     ctx.lineWidth=4;
     ctx.setLineDash([12,12]);
-    ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,BASE_H); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,vh); ctx.stroke();
     ctx.setLineDash([]);
     ctx.restore();
   }
@@ -649,15 +807,11 @@
     ctx.restore();
   }
 
-  // Simple character drawing (stylized)
   function drawPerson(x,y,w,h, hair, body, skin, mustache=false, slanted=false){
-    // hair
     ctx.fillStyle=hair;
     ctx.beginPath(); ctx.ellipse(x+w*0.5,y+h*0.20,w*0.36,h*0.26,0,0,Math.PI*2); ctx.fill();
-    // face
     ctx.fillStyle=skin;
     ctx.beginPath(); ctx.ellipse(x+w*0.5,y+h*0.32,w*0.24,h*0.20,0,0,Math.PI*2); ctx.fill();
-    // eyes
     ctx.strokeStyle="rgba(20,20,20,.9)"; ctx.lineWidth=3;
     const ey=y+h*0.32;
     if(!slanted){
@@ -671,15 +825,12 @@
       ctx.beginPath(); ctx.moveTo(x+w*0.44,y+h*0.40); ctx.lineTo(x+w*0.33,y+h*0.42); ctx.stroke();
       ctx.beginPath(); ctx.moveTo(x+w*0.56,y+h*0.40); ctx.lineTo(x+w*0.67,y+h*0.42); ctx.stroke();
     }
-    // body
     ctx.fillStyle=body;
     roundRect(x+w*0.28,y+h*0.46,w*0.44,h*0.50,18); ctx.fill();
   }
 
   function drawObstacle(o){
     const x=o.x-cam.x, y=o.y-cam.y;
-
-    // shadow
     ctx.fillStyle="rgba(0,0,0,.16)";
     ctx.beginPath(); ctx.ellipse(x+o.w/2, y+o.h+14, o.w*0.45, 9, 0, 0, Math.PI*2); ctx.fill();
 
@@ -705,7 +856,6 @@
       ctx.fillText("UNO", 16, o.h*0.66);
       ctx.restore();
     } else if(o.kind==="beer"){
-      // zigzag trail
       ctx.save();
       ctx.globalAlpha=0.55;
       ctx.strokeStyle="rgba(255,255,255,.9)";
@@ -807,31 +957,24 @@
     const w=pW(), h=pH();
     const x=player.x-cam.x, y=player.y-cam.y;
 
-    // blink during iFrames
     if(player.iFrames>0 && (Math.floor(performance.now()/80)%2===0)) return;
 
-    // shadow
     ctx.fillStyle="rgba(0,0,0,.18)";
     ctx.beginPath(); ctx.ellipse(x+w/2, y+h+10, w*0.55, 10, 0, 0, Math.PI*2); ctx.fill();
 
-    // body suit
     ctx.fillStyle="rgba(30,40,55,1)";
     roundRect(x+3, y+Math.max(18,h*0.28), w-6, h*0.72, 18); ctx.fill();
 
-    // white shirt
     ctx.fillStyle="rgba(245,245,245,1)";
     roundRect(x+4, y+Math.max(30,h*0.55), w-8, h*0.45, 18); ctx.fill();
 
-    // face
     ctx.fillStyle="rgba(255,225,200,1)";
     ctx.beginPath(); ctx.ellipse(x+w/2, y+22, w*0.22, h*0.18, 0, 0, Math.PI*2); ctx.fill();
 
-    // eyes
     ctx.strokeStyle="rgba(20,20,20,.95)"; ctx.lineWidth=4;
     ctx.beginPath(); ctx.moveTo(x+w/2-6, y+24); ctx.lineTo(x+w/2-20, y+26); ctx.stroke();
     ctx.beginPath(); ctx.moveTo(x+w/2+6, y+24); ctx.lineTo(x+w/2+20, y+26); ctx.stroke();
 
-    // green cap
     ctx.fillStyle="rgba(50,170,90,1)";
     roundRect(x-3, y+6, w+6, h*0.14, 16); ctx.fill();
     ctx.fillStyle="rgba(40,140,75,1)";
@@ -845,14 +988,12 @@
     ctx.fillStyle="rgba(170,150,120,1)";
     roundRect(sx,sy,castle.w,castle.h,22); ctx.fill();
 
-    // label
     ctx.fillStyle="rgba(0,0,0,.45)";
     roundRect(sx+castle.w*0.12, sy+16, castle.w*0.76, 52, 14); ctx.fill();
     ctx.fillStyle="#fff";
     ctx.font="1000 26px system-ui";
     ctx.fillText("Дом Алёны", sx+castle.w*0.30, sy+52);
 
-    // pole
     const px=pole.x-cam.x;
     ctx.strokeStyle="rgba(40,40,40,.9)";
     ctx.lineWidth=8;
@@ -861,7 +1002,6 @@
     ctx.lineTo(px, pole.bottomY - cam.y);
     ctx.stroke();
 
-    // flag
     ctx.fillStyle="rgba(240,60,60,.95)";
     ctx.beginPath();
     ctx.moveTo(px, pole.topY - cam.y + 22);
@@ -870,51 +1010,44 @@
     ctx.closePath();
     ctx.fill();
 
-    // Big Alena in cutscene/gameOver
     if(cutscene || gameOver){
       const ax = sx+castle.w*0.86, ay = sy+castle.h*0.88;
-      // hair
       ctx.fillStyle="rgba(250,225,95,1)";
       ctx.beginPath(); ctx.ellipse(ax, ay-150, 74, 54, 0, 0, Math.PI*2); ctx.fill();
-      // face
       ctx.fillStyle="rgba(255,225,200,1)";
       ctx.beginPath(); ctx.ellipse(ax, ay-138, 30, 30, 0, 0, Math.PI*2); ctx.fill();
-      // eyes
       ctx.strokeStyle="rgba(25,25,25,.95)";
       ctx.lineWidth=4;
       ctx.beginPath(); ctx.moveTo(ax-16, ay-140); ctx.lineTo(ax-6, ay-140); ctx.stroke();
       ctx.beginPath(); ctx.moveTo(ax+6, ay-140); ctx.lineTo(ax+16, ay-140); ctx.stroke();
-      // dress
       ctx.fillStyle="rgba(255,255,255,.97)";
       roundRect(ax-60, ay-106, 120, 150, 30); ctx.fill();
-      // belt
       ctx.fillStyle="rgba(255,210,60,1)";
       roundRect(ax-46, ay-32, 92, 16, 12); ctx.fill();
     }
   }
 
-  // ---------- Main update/draw ----------
+  // ----- Physics + game loop -----
   function update(dt){
     if(gameOver) return;
 
-    // iFrames
-    if(player.iFrames>0) player.iFrames = Math.max(0, player.iFrames-dt);
+    if(player.iFrames>0) player.iFrames=Math.max(0, player.iFrames-dt);
 
-    // cutscene: after flag line, obstacles freeze, player walks to castle
+    const vw = canvas.clientWidth;
+    const vh = canvas.clientHeight;
+
     if(cutscene){
-      player.vx = 220;
+      player.vx = 240;
       player.vy += GRAV*dt;
       collide(dt);
 
-      // camera
-      cam.x = clamp(player.x + pW()/2 - BASE_W*0.40, 0, WORLD_W-BASE_W);
+      cam.x = clamp(player.x + pW()/2 - vw*0.40, 0, WORLD_W - vw);
       cam.y = 0;
 
       if(player.x > castle.x - 140){
         player.vx=0;
         gameOver=true;
       }
-
       updateFX(dt);
       hudText.textContent = `Счёт: ${score} • ${hearts()}`;
       return;
@@ -932,49 +1065,44 @@
       updateObstacles(dt);
     }
 
-    // jump
-    if(jumpQueued && player.onGround){
-      player.vy = -pJump();
-      player.onGround=false;
-    }
-    jumpQueued=false;
+    // control
+    applyMovement(dt);
 
-    // movement
-    autoRun(dt);
+    // gravity
     player.vy += GRAV*dt;
     collide(dt);
 
-    // camera
-    cam.x = clamp(player.x + pW()/2 - BASE_W*0.40, 0, WORLD_W-BASE_W);
+    cam.x = clamp(player.x + pW()/2 - vw*0.40, 0, WORLD_W - vw);
     cam.y = 0;
-
-    // obstacle extra props
-    for(const o of obstacles){
-      if(o.motion==="spin") o.spin += dt*6.2;
-    }
 
     handleHits();
     updateFX(dt);
 
-    // flag line trigger
     if(!flagTriggered && (player.x + pW() >= FLAG_LINE_X)){
       flagTriggered=true;
       overlay.style.display="flex";
       finalScore.textContent = `Счёт: ${score}`;
-      cutscene=true; // start walk to castle
+      cutscene=true;
     }
 
     hudText.textContent = `Счёт: ${score} • ${hearts()}`;
   }
 
   function draw(){
-    setScale();
-    ctx.clearRect(-2000,-2000,5000,5000);
+    // draw in CSS pixels (we already set ctx transform to dpr)
+    const vw = canvas.clientWidth;
+    const vh = canvas.clientHeight;
 
-    drawBackground();
-    drawTiles();
+    ctx.clearRect(0,0,vw,vh);
+
+    drawBackground(vw,vh);
+    drawTiles(vw,vh);
+
+    // landmarks
     drawLandmarks();
-    drawFlagLine();
+
+    // flag line
+    drawFlagLine(vw,vh);
 
     // obstacles
     for(const o of obstacles) drawObstacle(o);
@@ -984,7 +1112,6 @@
     drawPlayer();
   }
 
-  // ---------- Reset ----------
   function resetGame(){
     score=0; time=0; spawnTimer=0; spawnIndex=0;
     flagTriggered=false; cutscene=false; gameOver=false;
@@ -1002,10 +1129,14 @@
     hudText.textContent = `Счёт: 0 • ${hearts()}`;
   }
 
-  // ---------- Loop ----------
+  // Collision helpers need these
+  function collideAndClamp(dt){ collide(dt); }
+
+  // fixed missing reference (collide uses resetGame already)
+  // Main loop
   let last=performance.now();
   function loop(now){
-    const dt=Math.min(0.033,(now-last)/1000);
+    const dt = Math.min(0.033,(now-last)/1000);
     last=now;
     if(running){
       update(dt);
@@ -1015,14 +1146,16 @@
   }
   requestAnimationFrame(loop);
 
-  // ---------- Buttons ----------
-  startBtn.addEventListener("click", async ()=>{
-    await tryFullscreen();
+  // ----- Start / Back / Restart -----
+  function startGame(){
     menu.style.display="none";
-    gameWrap.style.display="block";
+    gameWrap.style.display="flex";
     running=true;
+    resizeCanvas();
     resetGame();
-  });
+  }
+
+  startText.addEventListener("click", startGame);
 
   backBtn.addEventListener("click", ()=>{
     running=false;
@@ -1031,6 +1164,10 @@
   });
 
   restartBtn.addEventListener("click", resetGame);
+
+  // initial
+  // Wait a tick so layout exists
+  setTimeout(resizeCanvas, 50);
 
 })();
 </script>
