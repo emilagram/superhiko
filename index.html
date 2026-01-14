@@ -1,4 +1,4 @@
-<!doctype html>
+ <!doctype html>
 <html lang="ru">
 <head>
   <meta charset="utf-8" />
@@ -6,15 +6,13 @@
   <title>Super Hiko — vs. Friends</title>
   <style>
     :root{
-      --bg:#070b14;
       --line: rgba(255,255,255,.14);
       --text:#eaf0ff;
       --muted: rgba(255,255,255,.78);
     }
     html, body { height:100%; margin:0; color:var(--text); font-family: system-ui, Arial; }
-    body{
-      background: radial-gradient(1200px 600px at 50% 0%, #0f1a3a 0%, #070b14 55%);
-    }
+    body{ background: radial-gradient(1200px 600px at 50% 0%, #0f1a3a 0%, #070b14 55%); }
+
     .wrap{ display:flex; flex-direction:column; align-items:center; gap:10px; padding:12px; }
 
     /* START */
@@ -100,6 +98,7 @@
       user-select:none;
       -webkit-user-select:none;
     }
+    .hudLeft{ display:flex; gap:10px; align-items:center; }
     button{
       background:#0f1834; color:#eaf0ff;
       border:1px solid rgba(255,255,255,.15);
@@ -148,11 +147,33 @@
     }
     .hintBox span{display:block; font-weight:750; opacity:.9; font-size:12px; margin-top:4px;}
 
+    /* Overlay message after crossing flag line */
+    .overlay{
+      position:absolute; inset:0;
+      display:none;
+      align-items:flex-end;
+      justify-content:center;
+      padding:18px;
+      pointer-events:none;
+    }
+    .overlayBox{
+      width:min(740px, 92%);
+      background:rgba(0,0,0,.62);
+      border:1px solid rgba(255,255,255,.16);
+      border-radius:16px;
+      padding:16px 16px 14px;
+      box-shadow: 0 18px 50px rgba(0,0,0,.45);
+      backdrop-filter: blur(6px);
+    }
+    .overlayBox h2{ margin:0; font-size:28px; font-weight:1000; }
+    .overlayBox p{ margin:6px 0 0; opacity:.9; font-weight:800; }
+
     @media (max-width: 520px){
       .title{font-size:24px}
       .go{font-size:17px}
       .touchHint{display:flex;}
       .help{max-width: unset;}
+      .overlayBox h2{ font-size:24px; }
     }
   </style>
 </head>
@@ -170,7 +191,7 @@
         <div class="help">
           <b>Телефон:</b> тап (центр) — прыжок.<br>
           Удерживай <b>слева</b> — тормоз, <b>справа</b> — ускорение.<br>
-          <b>Цель:</b> добраться до <b>дома Алёны</b> и поймать флаг ❤
+          <b>Цель:</b> дойти до <b>дома Алёны</b> и пройти флаг ❤
         </div>
       </div>
 
@@ -181,7 +202,10 @@
     </div>
 
     <div id="hud" class="hud hidden">
-      <div><b>Super Hiko</b> <span style="opacity:.85">— тап: прыжок • слева: тормоз • справа: ускорение</span></div>
+      <div class="hudLeft">
+        <button id="backBtn">⬅ Назад</button>
+        <div><b>Super Hiko</b> <span style="opacity:.85">— тап: прыжок • слева: тормоз • справа: ускорение</span></div>
+      </div>
       <div style="display:flex; gap:8px; align-items:center;">
         <div id="info"></div>
         <button id="reset">Рестарт</button>
@@ -190,6 +214,14 @@
 
     <div class="stage" id="stage">
       <canvas id="game" width="980" height="540"></canvas>
+
+      <div class="overlay" id="overlay">
+        <div class="overlayBox">
+          <h2 id="overlayTitle">WELCOME KOXANIE ❤</h2>
+          <p id="overlayScore">Счёт: 0</p>
+        </div>
+      </div>
+
       <div class="touchHint" aria-hidden="true">
         <div class="hintBox">ЛЕВО<span>удерживай: ТОРМОЗ</span></div>
         <div class="hintBox">ТАП<span>прыжок</span></div>
@@ -207,24 +239,35 @@
   const ctx = canvas.getContext("2d");
   const W = canvas.width, H = canvas.height;
 
-  // ---------- Game content ----------
+  // ---------- UI ----------
+  const startEl = document.getElementById("start");
+  const hudEl = document.getElementById("hud");
+  const infoEl = document.getElementById("info");
+  const goBtn = document.getElementById("go");
+  const resetBtn = document.getElementById("reset");
+  const backBtn = document.getElementById("backBtn");
+  const stageEl = document.getElementById("stage");
+  const overlay = document.getElementById("overlay");
+  const overlayScore = document.getElementById("overlayScore");
+
+  // ---------- Friends ----------
   const friends = [
-    {name:"Zloy Stas", kind:"blond_mustache_man", lane:"air",   speed:320, size:"m",  spawnPoint:"topRight", motion:"dash"},
-    {name:"Arkadağ", kind:"hairy_man",           lane:"ground",speed:260, size:"m",  spawnPoint:"right",    motion:"steady"},
-    {name:"Timur Niva", kind:"car",              lane:"ground",speed:360, size:"xl", spawnPoint:"right",    motion:"bump"},
-    {name:"Mona", kind:"slanted_eyes_girl",      lane:"mid",   speed:300, size:"l",  spawnPoint:"midRight", motion:"wobble"},
-    {name:"Emil Abi", kind:"bald_mustache_man",  lane:"ground",speed:290, size:"l",  spawnPoint:"right",    motion:"steady"},
-    {name:"Uno", kind:"uno_card",                lane:"mid",   speed:330, size:"l",  spawnPoint:"topRight", motion:"spin"},
-    {name:"Asya", kind:"blonde_girl",            lane:"ground",speed:270, size:"m",  spawnPoint:"right",    motion:"steady"},
-    {name:"Aynura", kind:"tall_black_girl",      lane:"air",   speed:310, size:"xl", spawnPoint:"topRight", motion:"dive"},
-    {name:"Zamina", kind:"girl_piano",           lane:"ground",speed:250, size:"xl", spawnPoint:"right",    motion:"heavy"},
-    {name:"Elnur", kind:"man_laptop",            lane:"air",   speed:305, size:"xl", spawnPoint:"topRight", motion:"drift"},
-    {name:"Angelina Minsk", kind:"flower",       lane:"air",   speed:240, size:"m",  spawnPoint:"topRight", motion:"float"},
-    {name:"Malika", kind:"angel",                lane:"air",   speed:235, size:"l",  spawnPoint:"topRight", motion:"float"},
-    {name:"Aşkiyom", kind:"beer",                lane:"mid",   speed:285, size:"l",  spawnPoint:"midRight", motion:"zigzag"},
+    {name:"Zloy Stas", kind:"blond_mustache_man", lane:"air",   speed:330, size:"m",  spawnPoint:"topRight", motion:"dash"},
+    {name:"Arkadağ", kind:"hairy_man",           lane:"ground",speed:270, size:"m",  spawnPoint:"right",    motion:"steady"},
+    {name:"Timur Niva", kind:"car",              lane:"ground",speed:380, size:"xl", spawnPoint:"right",    motion:"bump"},
+    {name:"Mona", kind:"slanted_eyes_girl",      lane:"mid",   speed:315, size:"l",  spawnPoint:"midRight", motion:"wobble"},
+    {name:"Emil Abi", kind:"bald_mustache_man",  lane:"ground",speed:300, size:"l",  spawnPoint:"right",    motion:"steady"},
+    {name:"Uno", kind:"uno_card",                lane:"mid",   speed:340, size:"l",  spawnPoint:"topRight", motion:"spin"},
+    {name:"Asya", kind:"blonde_girl",            lane:"ground",speed:280, size:"m",  spawnPoint:"right",    motion:"steady"},
+    {name:"Aynura", kind:"tall_black_girl",      lane:"air",   speed:320, size:"xl", spawnPoint:"topRight", motion:"dive"},
+    {name:"Zamina", kind:"girl_piano",           lane:"ground",speed:260, size:"xl", spawnPoint:"right",    motion:"heavy"},
+    {name:"Elnur", kind:"man_laptop",            lane:"air",   speed:315, size:"xl", spawnPoint:"topRight", motion:"drift"},
+    {name:"Angelina Minsk", kind:"flower",       lane:"air",   speed:245, size:"m",  spawnPoint:"topRight", motion:"float"},
+    {name:"Malika", kind:"angel",                lane:"air",   speed:240, size:"l",  spawnPoint:"topRight", motion:"float"},
+    {name:"Aşkiyom", kind:"beer",                lane:"mid",   speed:300, size:"l",  spawnPoint:"midRight", motion:"zigzag"},
   ];
 
-  // ---------- Pretty enemy cards ----------
+  // ---------- Start cards ----------
   const palette = [
     ["#57d38e","#2b7bff"], ["#ff8a4a","#ff4aa2"], ["#ffd166","#06d6a0"],
     ["#a78bfa","#22d3ee"], ["#fb7185","#60a5fa"], ["#f59e0b","#10b981"],
@@ -233,6 +276,7 @@
     ["#38bdf8","#fda4af"],
   ];
   const enemyListEl = document.getElementById("enemyList");
+  enemyListEl.innerHTML = "";
   friends.forEach((e, i) => {
     const [c1,c2] = palette[i % palette.length];
     const d = document.createElement("div");
@@ -243,36 +287,28 @@
     enemyListEl.appendChild(d);
   });
 
-  // ---------- UI ----------
-  const startEl = document.getElementById("start");
-  const hudEl = document.getElementById("hud");
-  const infoEl = document.getElementById("info");
-  const goBtn = document.getElementById("go");
-  const resetBtn = document.getElementById("reset");
-  const stageEl = document.getElementById("stage");
-
-  // ---------- World (tiles) ----------
+  // ---------- World ----------
   const TILE = 32;
   const MAP_W = 210, MAP_H = 18;
   const worldPxW = MAP_W * TILE, worldPxH = MAP_H * TILE;
 
   const map = Array.from({length: MAP_H}, () => Array(MAP_W).fill(0));
   for (let x=0;x<MAP_W;x++){ map[MAP_H-1][x]=1; map[MAP_H-2][x]=1; }
-
   function putRect(tx,ty,tw,th,v=1){
     for(let y=ty;y<ty+th;y++) for(let x=tx;x<tx+tw;x++){
       if(y>=0&&y<MAP_H&&x>=0&&x<MAP_W) map[y][x]=v;
     }
   }
+  const tileAt = (tx,ty)=> (tx<0||ty<0||tx>=MAP_W||ty>=MAP_H)?0:map[ty][tx];
 
-  // Platforms with names
+  // Platforms
   putRect(14, MAP_H-4, 10, 2, 1);            // Bornova ovası
   putRect(34, MAP_H-2-5, 10, 5, 1);          // Bayraklı üst geçit
   putRect(58, MAP_H-2-3, 12, 3, 1);          // Karşıyaka otoban girişi
   putRect(84, MAP_H-2-4, 12, 4, 1);          // Alaybey girişi
   putRect(104, MAP_H-2-2, 14, 2, 1);         // Karşıyaka
 
-  // Final zone + castle
+  // Final zone
   const LAST_RISE_TX = 132;
   putRect(LAST_RISE_TX, MAP_H-2-3, 10, 3, 1);
 
@@ -282,13 +318,15 @@
   const CASTLE_TX = SAFE_WALK_START_TX + 3;
   putRect(CASTLE_TX, MAP_H-6, 20, 1, 1);
 
-  const FLAG_TX = CASTLE_TX + 15;
+  // IMPORTANT: Flag line is at the START of Alena home zone
+  const FLAG_LINE_X = (SAFE_WALK_START_TX * TILE) - 10; // crossing this triggers message
+  const STOP_OBSTACLES_X = (LAST_RISE_TX * TILE) - 40;
+
   const POLE_TX = CASTLE_TX + 17;
   putRect(POLE_TX, MAP_H-10, 1, 8, 1);
 
-  const STOP_OBSTACLES_X = (LAST_RISE_TX * TILE) - 40;
-
-  const tileAt = (tx,ty)=> (tx<0||ty<0||tx>=MAP_W||ty>=MAP_H)?0:map[ty][tx];
+  const castle = { x:(CASTLE_TX+8)*TILE, y:(MAP_H-2)*TILE, w:320, h:290 };
+  const pole = { x:(POLE_TX)*TILE + TILE/2, topY:(MAP_H-10)*TILE, bottomY:(MAP_H-2)*TILE };
 
   // ---------- Player ----------
   const stages = [
@@ -303,10 +341,8 @@
   const AIR_DRAG = 0.97;
 
   const cam = { x:0, y:0 };
-
   const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
   const aabb=(ax,ay,aw,ah,bx,by,bw,bh)=> ax<bx+bw && ax+aw>bx && ay<by+bh && ay+ah>by;
-
   const pW = ()=> stages[player.stage].w;
   const pH = ()=> stages[player.stage].h;
   const pJump = ()=> stages[player.stage].jump;
@@ -353,13 +389,15 @@
     }
 
     player.x = clamp(player.x, 0, worldPxW - w);
-    if (player.y > worldPxH) reset();
+    if (player.y > worldPxH) resetToGame();
   }
 
-  // ---------- Controls (mobile-first) ----------
+  // ---------- State ----------
   let started=false, gameOver=false, cutscene=false;
   let score=0;
+  let flagTriggered=false;
 
+  // ---------- Controls ----------
   let touchHold = "none"; // brake | boost | none
   let tapJumpQueued = false;
   const keys = new Set();
@@ -367,10 +405,10 @@
   addEventListener("keydown",(e)=>{
     if (["ArrowLeft","ArrowRight","ArrowUp","Space","KeyR"].includes(e.code)) e.preventDefault();
     keys.add(e.code);
-    if (e.code==="KeyR") reset();
+    if (e.code==="KeyR") resetToGame();
   });
   addEventListener("keyup",(e)=>keys.delete(e.code));
-  resetBtn.addEventListener("click", reset);
+  resetBtn.addEventListener("click", resetToGame);
 
   stageEl.addEventListener("pointerdown", (e)=>{
     if (!started) return;
@@ -382,7 +420,6 @@
     else if (zone > 0.66) touchHold = "boost";
     else { tapJumpQueued = true; touchHold = "none"; }
   }, {passive:false});
-
   stageEl.addEventListener("pointerup", ()=>{ touchHold="none"; }, {passive:true});
   stageEl.addEventListener("pointercancel", ()=>{ touchHold="none"; }, {passive:true});
   stageEl.addEventListener("pointermove", (e)=>{
@@ -393,7 +430,6 @@
     const zone = x / rect.width;
     touchHold = (zone < 0.5) ? "brake" : "boost";
   }, {passive:true});
-
   addEventListener("touchmove", (e)=>{ if (started) e.preventDefault(); }, {passive:false});
 
   function applyAutoRun(dt){
@@ -411,7 +447,22 @@
     player.vx += (target - player.vx) * (1 - Math.exp(-k*dt));
   }
 
-  // ---------- Obstacles (2–3 grouped, faster) ----------
+  // Back button (returns to Welcome)
+  backBtn.addEventListener("click", () => {
+    returnToMenu();
+  });
+
+  function returnToMenu(){
+    started=false;
+    canvas.style.display="none";
+    hudEl.classList.add("hidden");
+    startEl.classList.remove("hidden");
+    overlay.style.display="none";
+    touchHold="none";
+    tapJumpQueued=false;
+  }
+
+  // ---------- Obstacles ----------
   const obstacles=[];
   let timeSinceStart=0;
   let spawnIndex=0;
@@ -515,9 +566,10 @@
 
   function updateSpawns(dt){
     if (player.x > STOP_OBSTACLES_X) return;
+    if (flagTriggered) return;
 
     groupTimer += dt;
-    if (groupTimer >= 2.0){ // faster groups
+    if (groupTimer >= 2.0){
       groupTimer = 0;
       scheduleGroup();
     }
@@ -533,6 +585,7 @@
 
   function updateObstacles(dt){
     if (player.x > STOP_OBSTACLES_X) return;
+    if (flagTriggered) return;
 
     for (const o of obstacles){
       o.t += dt;
@@ -584,7 +637,7 @@
 
   // ---------- FX (BOOM) ----------
   const fxList=[];
-  function roundRect(x,y,w,h,r){
+  function roundRectPath(x,y,w,h,r){
     const rr = Math.min(r, w/2, h/2);
     ctx.beginPath();
     ctx.moveTo(x+rr, y);
@@ -614,7 +667,7 @@
     for(let i=fxList.length-1;i>=0;i--) if (fxList[i].t>fxList[i].life) fxList.splice(i,1);
   }
 
-  // ---------- Combat (shrink) ----------
+  // ---------- Hit / shrink ----------
   function takeHit(){
     if (player.iFrames>0) return;
     player.iFrames = 1.1;
@@ -625,12 +678,13 @@
     } else if (player.lives===1){
       const oldH=pH(); player.stage=2; player.y += (oldH - pH());
     } else {
-      reset();
+      resetToGame();
     }
     player.vx = -260;
   }
 
   function handleInteractions(){
+    if (flagTriggered) return; // once flag line crossed, no more fights
     const pw=pW(), ph=pH();
     for(const o of obstacles){
       if (!aabb(player.x,player.y,pw,ph, o.x,o.y,o.w,o.h)) continue;
@@ -652,18 +706,29 @@
     }
   }
 
-  // ---------- Castle / Flag ----------
-  const castle = { x:(CASTLE_TX+8)*TILE, y:(MAP_H-2)*TILE, w:320, h:290 };
-  const pole = { x:(POLE_TX)*TILE + TILE/2, topY:(MAP_H-10)*TILE, bottomY:(MAP_H-2)*TILE };
-
-  function reachedFlag(){
-    const fx = pole.x - 10;
-    return player.x + pW() > fx && player.x < fx + 22 && player.onGround && player.x > (FLAG_TX*TILE - 40);
+  // ---------- Draw helpers ----------
+  function labelAtWorld(wx,wy,text){
+    const sx=wx-cam.x, sy=wy-cam.y;
+    if (sx<-400 || sx>W+400) return;
+    ctx.save();
+    ctx.font="1000 16px system-ui";
+    const tw=ctx.measureText(text).width;
+    ctx.globalAlpha=0.92;
+    ctx.fillStyle="rgba(0,0,0,.35)";
+    ctx.fillRect(sx-6, sy-22, tw+12, 28);
+    ctx.fillStyle="#fff";
+    ctx.fillText(text, sx, sy-2);
+    ctx.restore();
+  }
+  function drawLandmarks(){
+    labelAtWorld(14*TILE,  (MAP_H-4)*TILE,   "Bornova ovası");
+    labelAtWorld(34*TILE,  (MAP_H-2-5)*TILE, "Bayraklı üst geçit");
+    labelAtWorld(58*TILE,  (MAP_H-2-3)*TILE, "Karşıyaka otoban girişi");
+    labelAtWorld(84*TILE,  (MAP_H-2-4)*TILE, "Alaybey girişi");
+    labelAtWorld(104*TILE, (MAP_H-2-2)*TILE, "Karşıyaka");
   }
 
-  // ---------- Drawing ----------
   function drawBackground(){
-    // Ege körfez sahil
     ctx.save();
     ctx.globalAlpha=0.9;
     ctx.fillStyle="rgba(0,40,90,.35)";
@@ -703,28 +768,6 @@
     }
   }
 
-  function labelAtWorld(wx,wy,text){
-    const sx=wx-cam.x, sy=wy-cam.y;
-    if (sx<-400 || sx>W+400) return;
-    ctx.save();
-    ctx.font="1000 16px system-ui";
-    const tw=ctx.measureText(text).width;
-    ctx.globalAlpha=0.92;
-    ctx.fillStyle="rgba(0,0,0,.35)";
-    ctx.fillRect(sx-6, sy-22, tw+12, 28);
-    ctx.fillStyle="#fff";
-    ctx.fillText(text, sx, sy-2);
-    ctx.restore();
-  }
-
-  function drawLandmarks(){
-    labelAtWorld(14*TILE,  (MAP_H-4)*TILE,   "Bornova ovası");
-    labelAtWorld(34*TILE,  (MAP_H-2-5)*TILE, "Bayraklı üst geçit");
-    labelAtWorld(58*TILE,  (MAP_H-2-3)*TILE, "Karşıyaka otoban girişi");
-    labelAtWorld(84*TILE,  (MAP_H-2-4)*TILE, "Alaybey girişi");
-    labelAtWorld(104*TILE, (MAP_H-2-2)*TILE, "Karşıyaka");
-  }
-
   function drawNameTag(cx, topY, text){
     ctx.save();
     ctx.font="1000 14px system-ui";
@@ -737,14 +780,14 @@
     ctx.restore();
   }
 
-  // Simple character primitives
-  function drawFaceBase(x,y,w,h, skin){
+  // ----- Character drawing (stylized) -----
+  function face(x,y,w,h, skin){
     ctx.fillStyle=skin;
     ctx.beginPath();
     ctx.ellipse(x+w*0.5, y+h*0.35, w*0.28, h*0.25, 0, 0, Math.PI*2);
     ctx.fill();
   }
-  function drawEyes(x,y,w,h, slanted){
+  function eyes(x,y,w,h, slanted){
     ctx.save();
     ctx.strokeStyle="rgba(20,20,20,.9)";
     ctx.lineWidth=2.3;
@@ -759,7 +802,7 @@
     }
     ctx.restore();
   }
-  function drawMustache(x,y,w,h){
+  function mustache(x,y,w,h){
     ctx.save();
     ctx.strokeStyle="rgba(20,20,20,.95)";
     ctx.lineWidth=3.7;
@@ -768,94 +811,92 @@
     ctx.beginPath(); ctx.moveTo(x+w*0.54,my); ctx.lineTo(x+w*0.68,my+2); ctx.stroke();
     ctx.restore();
   }
-  function drawBody(x,y,w,h,color){
+  function body(x,y,w,h,color){
     ctx.fillStyle=color;
     ctx.fillRect(x+w*0.28, y+h*0.46, w*0.44, h*0.44);
     ctx.fillRect(x+w*0.24, y+h*0.62, w*0.18, h*0.32);
     ctx.fillRect(x+w*0.58, y+h*0.62, w*0.18, h*0.32);
   }
+  function rr(x,y,w,h,r){ roundRectPath(x,y,w,h,r); ctx.fill(); }
 
-  function drawBlondMustacheMan(x,y,w,h){
+  function blondMustacheMan(x,y,w,h){
     ctx.fillStyle="rgba(245,215,60,1)";
     ctx.beginPath(); ctx.ellipse(x+w*0.5,y+h*0.24,w*0.33,h*0.23,0,0,Math.PI*2); ctx.fill();
-    drawFaceBase(x,y,w,h,"rgba(255,225,200,1)");
-    drawEyes(x,y,w,h,false); drawMustache(x,y,w,h);
-    drawBody(x,y,w,h,"rgba(80,120,200,1)");
+    face(x,y,w,h,"rgba(255,225,200,1)");
+    eyes(x,y,w,h,false); mustache(x,y,w,h);
+    body(x,y,w,h,"rgba(80,120,200,1)");
   }
-  function drawHairyMan(x,y,w,h){
+  function hairyMan(x,y,w,h){
     ctx.fillStyle="rgba(40,25,15,1)";
     ctx.beginPath(); ctx.ellipse(x+w*0.5,y+h*0.23,w*0.35,h*0.25,0,0,Math.PI*2); ctx.fill();
-    drawFaceBase(x,y,w,h,"rgba(255,220,195,1)");
-    drawEyes(x,y,w,h,false);
-    drawBody(x,y,w,h,"rgba(60,160,120,1)");
+    face(x,y,w,h,"rgba(255,220,195,1)");
+    eyes(x,y,w,h,false);
+    body(x,y,w,h,"rgba(60,160,120,1)");
   }
-  function drawBaldMustacheMan(x,y,w,h){
-    drawFaceBase(x,y,w,h,"rgba(255,225,200,1)");
-    drawEyes(x,y,w,h,false); drawMustache(x,y,w,h);
-    drawBody(x,y,w,h,"rgba(140,80,170,1)");
+  function baldMustacheMan(x,y,w,h){
+    face(x,y,w,h,"rgba(255,225,200,1)");
+    eyes(x,y,w,h,false); mustache(x,y,w,h);
+    body(x,y,w,h,"rgba(140,80,170,1)");
   }
-  function drawSlantedEyesGirl(x,y,w,h){
+  function slantedGirl(x,y,w,h){
     ctx.fillStyle="rgba(25,20,15,1)";
     ctx.beginPath(); ctx.ellipse(x+w*0.5,y+h*0.24,w*0.35,h*0.25,0,0,Math.PI*2); ctx.fill();
-    drawFaceBase(x,y,w,h,"rgba(255,225,205,1)");
-    drawEyes(x,y,w,h,true);
-    drawBody(x,y,w,h,"rgba(230,90,150,1)");
+    face(x,y,w,h,"rgba(255,225,205,1)");
+    eyes(x,y,w,h,true);
+    body(x,y,w,h,"rgba(230,90,150,1)");
   }
-  function drawBlondeGirl(x,y,w,h){
+  function blondeGirl(x,y,w,h){
     ctx.fillStyle="rgba(250,220,80,1)";
     ctx.beginPath(); ctx.ellipse(x+w*0.5,y+h*0.24,w*0.36,h*0.25,0,0,Math.PI*2); ctx.fill();
-    drawFaceBase(x,y,w,h,"rgba(255,225,200,1)");
-    drawEyes(x,y,w,h,false);
-    drawBody(x,y,w,h,"rgba(250,120,70,1)");
+    face(x,y,w,h,"rgba(255,225,200,1)");
+    eyes(x,y,w,h,false);
+    body(x,y,w,h,"rgba(250,120,70,1)");
   }
-  function drawTallBlackGirl(x,y,w,h){
+  function tallBlackGirl(x,y,w,h){
     ctx.fillStyle="rgba(10,10,10,1)";
     ctx.beginPath(); ctx.ellipse(x+w*0.5,y+h*0.24,w*0.36,h*0.26,0,0,Math.PI*2); ctx.fill();
-    drawFaceBase(x,y,w,h,"rgba(145,95,70,1)");
-    drawEyes(x,y,w,h,false);
+    face(x,y,w,h,"rgba(145,95,70,1)");
+    eyes(x,y,w,h,false);
     ctx.fillStyle="rgba(40,40,80,1)";
     ctx.fillRect(x+w*0.26,y+h*0.46,w*0.48,h*0.56);
   }
-  function drawCar(x,y,w,h){
-    ctx.fillStyle="rgba(40,90,180,1)";
-    roundRect(x, y+h*0.28, w, h*0.55, 12); ctx.fill();
-    ctx.fillStyle="rgba(55,120,210,1)";
-    roundRect(x+w*0.18, y, w*0.56, h*0.45, 12); ctx.fill();
-    ctx.fillStyle="rgba(170,230,255,.85)";
-    roundRect(x+w*0.26, y+h*0.12, w*0.40, h*0.24, 10); ctx.fill();
+  function car(x,y,w,h){
+    ctx.fillStyle="rgba(40,90,180,1)"; rr(x, y+h*0.28, w, h*0.55, 12);
+    ctx.fillStyle="rgba(55,120,210,1)"; rr(x+w*0.18, y, w*0.56, h*0.45, 12);
+    ctx.fillStyle="rgba(170,230,255,.85)"; rr(x+w*0.26, y+h*0.12, w*0.40, h*0.24, 10);
     ctx.fillStyle="rgba(20,20,20,1)";
     ctx.beginPath(); ctx.arc(x+w*0.25,y+h*0.90,9,0,Math.PI*2); ctx.fill();
     ctx.beginPath(); ctx.arc(x+w*0.75,y+h*0.90,9,0,Math.PI*2); ctx.fill();
   }
-  function drawUnoCard(x,y,w,h, spin){
+  function unoCard(x,y,w,h, spin){
     ctx.save();
     ctx.translate(x+w/2, y+h/2);
     ctx.rotate(spin);
     ctx.translate(-w/2, -h/2);
     ctx.fillStyle="rgba(200,30,40,1)";
-    roundRect(0,0,w,h,12); ctx.fill();
+    roundRectPath(0,0,w,h,12); ctx.fill();
     ctx.fillStyle="rgba(255,255,255,.95)";
     ctx.font="1000 18px system-ui";
     ctx.fillText("UNO", 12, h*0.66);
     ctx.restore();
   }
-  function drawGirlWithPiano(x,y,w,h){
-    drawBlondeGirl(x,y,w*0.55,h);
+  function girlPiano(x,y,w,h){
+    blondeGirl(x,y,w*0.55,h);
     const px=x+w*0.50, py=y+h*0.56;
     ctx.fillStyle="rgba(20,20,25,1)";
-    roundRect(px,py,w*0.48,h*0.34,10); ctx.fill();
+    roundRectPath(px,py,w*0.48,h*0.34,10); ctx.fill();
     ctx.fillStyle="rgba(255,255,255,.9)";
     for(let i=0;i<6;i++) ctx.fillRect(px+7+i*9, py+h*0.22, 5, 12);
   }
-  function drawManWithLaptop(x,y,w,h){
-    drawHairyMan(x,y,w*0.55,h);
+  function manLaptop(x,y,w,h){
+    hairyMan(x,y,w*0.55,h);
     const lx=x+w*0.52, ly=y+h*0.60;
     ctx.fillStyle="rgba(30,30,35,1)";
-    roundRect(lx,ly,w*0.44,h*0.24,9); ctx.fill();
+    roundRectPath(lx,ly,w*0.44,h*0.24,9); ctx.fill();
     ctx.fillStyle="rgba(120,200,255,.85)";
-    roundRect(lx+5,ly+5,w*0.44-10,h*0.24-12,8); ctx.fill();
+    roundRectPath(lx+5,ly+5,w*0.44-10,h*0.24-12,8); ctx.fill();
   }
-  function drawFlower(x,y,w,h){
+  function flower(x,y,w,h){
     const cx=x+w*0.52, cy=y+h*0.48;
     ctx.save(); ctx.translate(cx,cy);
     ctx.fillStyle="rgba(255,200,0,.95)";
@@ -869,7 +910,7 @@
     ctx.fillStyle="rgba(30,130,70,.95)";
     ctx.fillRect(x+w*0.48,y+h*0.40,w*0.06,h*0.60);
   }
-  function drawAngel(x,y,w,h){
+  function angel(x,y,w,h){
     ctx.fillStyle="rgba(255,255,255,.92)";
     ctx.beginPath();
     ctx.ellipse(x+w*0.30,y+h*0.52,w*0.22,h*0.20,-0.4,0,Math.PI*2);
@@ -879,17 +920,17 @@
     ctx.lineWidth=4;
     ctx.beginPath(); ctx.ellipse(x+w*0.50,y+h*0.18,w*0.18,h*0.10,0,0,Math.PI*2); ctx.stroke();
     ctx.fillStyle="rgba(240,240,255,1)";
-    roundRect(x+w*0.35,y+h*0.28,w*0.30,h*0.62,12); ctx.fill();
+    roundRectPath(x+w*0.35,y+h*0.28,w*0.30,h*0.62,12); ctx.fill();
     ctx.fillStyle="rgba(25,20,15,1)";
     ctx.beginPath(); ctx.ellipse(x+w*0.50,y+h*0.22,w*0.20,h*0.16,0,0,Math.PI*2); ctx.fill();
-    drawFaceBase(x,y,w,h,"rgba(255,225,200,1)");
-    drawEyes(x,y,w,h,false);
+    face(x,y,w,h,"rgba(255,225,200,1)");
+    eyes(x,y,w,h,false);
   }
-  function drawBeer(x,y,w,h){
+  function beer(x,y,w,h){
     ctx.fillStyle="rgba(255,255,255,.85)";
-    roundRect(x+w*0.22,y+h*0.18,w*0.52,h*0.72,12); ctx.fill();
+    roundRectPath(x+w*0.22,y+h*0.18,w*0.52,h*0.72,12); ctx.fill();
     ctx.fillStyle="rgba(255,190,40,.95)";
-    roundRect(x+w*0.24,y+h*0.34,w*0.48,h*0.54,10); ctx.fill();
+    roundRectPath(x+w*0.24,y+h*0.34,w*0.48,h*0.54,10); ctx.fill();
     ctx.strokeStyle="rgba(255,255,255,.85)";
     ctx.lineWidth=7;
     ctx.beginPath();
@@ -907,18 +948,18 @@
     ctx.ellipse(x+o.w/2, y+o.h+12, o.w*0.45, 8, 0, 0, Math.PI*2);
     ctx.fill();
 
-    if (o.kind==="blond_mustache_man") drawBlondMustacheMan(x,y,o.w,o.h);
-    else if (o.kind==="hairy_man") drawHairyMan(x,y,o.w,o.h);
-    else if (o.kind==="car") drawCar(x,y,o.w,o.h);
-    else if (o.kind==="slanted_eyes_girl") drawSlantedEyesGirl(x,y,o.w,o.h);
-    else if (o.kind==="bald_mustache_man") drawBaldMustacheMan(x,y,o.w,o.h);
-    else if (o.kind==="uno_card") drawUnoCard(x,y,o.w,o.h,o.spin);
-    else if (o.kind==="blonde_girl") drawBlondeGirl(x,y,o.w,o.h);
-    else if (o.kind==="tall_black_girl") drawTallBlackGirl(x,y,o.w,o.h);
-    else if (o.kind==="girl_piano") drawGirlWithPiano(x,y,o.w,o.h);
-    else if (o.kind==="man_laptop") drawManWithLaptop(x,y,o.w,o.h);
-    else if (o.kind==="flower") drawFlower(x,y,o.w,o.h);
-    else if (o.kind==="angel") drawAngel(x,y,o.w,o.h);
+    if (o.kind==="blond_mustache_man") blondMustacheMan(x,y,o.w,o.h);
+    else if (o.kind==="hairy_man") hairyMan(x,y,o.w,o.h);
+    else if (o.kind==="car") car(x,y,o.w,o.h);
+    else if (o.kind==="slanted_eyes_girl") slantedGirl(x,y,o.w,o.h);
+    else if (o.kind==="bald_mustache_man") baldMustacheMan(x,y,o.w,o.h);
+    else if (o.kind==="uno_card") unoCard(x,y,o.w,o.h,o.spin);
+    else if (o.kind==="blonde_girl") blondeGirl(x,y,o.w,o.h);
+    else if (o.kind==="tall_black_girl") tallBlackGirl(x,y,o.w,o.h);
+    else if (o.kind==="girl_piano") girlPiano(x,y,o.w,o.h);
+    else if (o.kind==="man_laptop") manLaptop(x,y,o.w,o.h);
+    else if (o.kind==="flower") flower(x,y,o.w,o.h);
+    else if (o.kind==="angel") angel(x,y,o.w,o.h);
     else if (o.kind==="beer"){
       // zigzag trail
       ctx.save();
@@ -934,7 +975,7 @@
       }
       ctx.stroke();
       ctx.restore();
-      drawBeer(x,y,o.w,o.h);
+      beer(x,y,o.w,o.h);
     }
 
     drawNameTag(x+o.w/2, y, o.name);
@@ -950,7 +991,7 @@
       ctx.save();
       ctx.globalAlpha = 0.95*a;
       ctx.fillStyle="rgba(0,0,0,.42)";
-      roundRect(sx-66, sy-76, 132, 40, 12); ctx.fill();
+      roundRectPath(sx-66, sy-76, 132, 40, 12); ctx.fill();
       ctx.fillStyle="#fff";
       ctx.font="1000 24px system-ui";
       ctx.fillText("BOOM", sx-40, sy-48);
@@ -981,9 +1022,9 @@
 
     // body
     ctx.fillStyle="rgba(30,40,55,1)";
-    roundRect(x+2, y+Math.max(12, h*0.28), w-4, h*0.72, 12); ctx.fill();
+    roundRectPath(x+2, y+Math.max(12, h*0.28), w-4, h*0.72, 12); ctx.fill();
     ctx.fillStyle="rgba(245,245,245,1)";
-    roundRect(x+3, y+Math.max(22, h*0.55), w-6, h*0.45, 12); ctx.fill();
+    roundRectPath(x+3, y+Math.max(22, h*0.55), w-6, h*0.45, 12); ctx.fill();
 
     // face
     ctx.fillStyle="rgba(255,225,200,1)";
@@ -997,16 +1038,16 @@
 
     // green cap
     ctx.fillStyle="rgba(50,170,90,1)";
-    roundRect(x-2, y+2, w+4, h*0.14, 12); ctx.fill();
+    roundRectPath(x-2, y+2, w+4, h*0.14, 12); ctx.fill();
     ctx.fillStyle="rgba(40,140,75,1)";
-    roundRect(x+2, y-7, w-4, h*0.11, 12); ctx.fill();
+    roundRectPath(x+2, y-7, w-4, h*0.11, 12); ctx.fill();
   }
 
   function drawHUD(){
     ctx.save();
     ctx.globalAlpha=0.92;
     ctx.fillStyle="rgba(0,0,0,.28)";
-    roundRect(18, 18, 360, 58, 14); ctx.fill();
+    roundRectPath(18, 18, 360, 58, 14); ctx.fill();
     ctx.fillStyle="#fff";
     ctx.font="1000 16px system-ui";
     ctx.fillText("Счёт: " + score, 34, 50);
@@ -1025,7 +1066,7 @@
     ctx.restore();
   }
 
-  // BIG Alena at finish
+  // BIG Alena near castle
   function drawAlenaBig(x,y){
     ctx.save();
     ctx.globalAlpha=0.25;
@@ -1047,18 +1088,18 @@
     ctx.beginPath(); ctx.moveTo(x-14, y-114); ctx.lineTo(x-4, y-114); ctx.stroke();
     ctx.beginPath(); ctx.moveTo(x+4, y-114); ctx.lineTo(x+14, y-114); ctx.stroke();
 
-    // white dress
+    // dress
     ctx.fillStyle="rgba(255,255,255,.96)";
-    roundRect(x-46, y-82, 92, 120, 26); ctx.fill();
+    roundRectPath(x-46, y-82, 92, 120, 26); ctx.fill();
 
     // yellow belt
     ctx.fillStyle="rgba(255,210,60,1)";
-    roundRect(x-36, y-24, 72, 14, 10); ctx.fill();
+    roundRectPath(x-36, y-24, 72, 14, 10); ctx.fill();
 
     // sleeves
     ctx.fillStyle="rgba(255,255,255,.95)";
-    roundRect(x-68, y-70, 30, 48, 18); ctx.fill();
-    roundRect(x+38, y-70, 30, 48, 18); ctx.fill();
+    roundRectPath(x-68, y-70, 30, 48, 18); ctx.fill();
+    roundRectPath(x+38, y-70, 30, 48, 18); ctx.fill();
 
     // heart
     ctx.fillStyle="rgba(255,80,110,1)";
@@ -1072,17 +1113,28 @@
     ctx.restore();
   }
 
-  function drawDialog(text){
+  function drawFlagLine(){
+    const x = Math.round(FLAG_LINE_X - cam.x);
+    if (x < -50 || x > W+50) return;
+
+    // vertical dashed line
     ctx.save();
-    ctx.globalAlpha=0.98;
-    ctx.fillStyle="rgba(0,0,0,.62)";
-    roundRect(38, H-155, W-76, 108, 16); ctx.fill();
+    ctx.globalAlpha=0.85;
+    ctx.strokeStyle="rgba(255,255,255,.9)";
+    ctx.lineWidth=3;
+    ctx.setLineDash([10,10]);
+    ctx.beginPath();
+    ctx.moveTo(x, 0);
+    ctx.lineTo(x, H);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // small label
+    ctx.fillStyle="rgba(0,0,0,.45)";
+    roundRectPath(x-120, 18, 240, 36, 12); ctx.fill();
     ctx.fillStyle="#fff";
-    ctx.font="1000 30px system-ui";
-    ctx.fillText(text, 70, H-95);
-    ctx.font="800 14px system-ui";
-    ctx.fillStyle="rgba(255,255,255,.82)";
-    ctx.fillText("Игра окончена — нажми R / Рестарт", 70, H-62);
+    ctx.font="1000 16px system-ui";
+    ctx.fillText("Линия флага → Дом Алёны", x-102, 42);
     ctx.restore();
   }
 
@@ -1091,10 +1143,10 @@
     const sy=(MAP_H-2)*TILE - castle.h;
 
     ctx.fillStyle="rgba(170,150,120,1)";
-    roundRect(sx,sy,castle.w,castle.h,18); ctx.fill();
+    roundRectPath(sx,sy,castle.w,castle.h,18); ctx.fill();
 
     ctx.fillStyle="rgba(0,0,0,.45)";
-    roundRect(sx+castle.w*0.16, sy+14, castle.w*0.68, 42, 12); ctx.fill();
+    roundRectPath(sx+castle.w*0.16, sy+14, castle.w*0.68, 42, 12); ctx.fill();
     ctx.fillStyle="#fff";
     ctx.font="1000 22px system-ui";
     ctx.fillText("Дом Алёны", sx+castle.w*0.30, sy+44);
@@ -1118,23 +1170,40 @@
 
     if (cutscene || gameOver){
       drawAlenaBig(sx+castle.w*0.84, sy+castle.h*0.86);
-      drawDialog("WELCOME KOXANIE ❤");
     }
   }
 
-  // ---------- Game loop ----------
+  // ---------- Tiles + drawing main ----------
+  function drawTiles(){
+    const startTx=Math.floor(cam.x/TILE);
+    const endTx=Math.ceil((cam.x+W)/TILE);
+    for(let ty=0; ty<MAP_H; ty++){
+      for(let tx=startTx; tx<=endTx; tx++){
+        if (tileAt(tx,ty)!==1) continue;
+        const x=tx*TILE - cam.x;
+        const y=ty*TILE - cam.y;
+        const isGround = (ty >= MAP_H-2);
+        ctx.fillStyle = isGround ? "rgba(40,120,60,1)" : "rgba(165,105,60,1)";
+        ctx.fillRect(x,y,TILE,TILE);
+        ctx.strokeStyle="rgba(0,0,0,.18)";
+        ctx.strokeRect(x+0.5,y+0.5,TILE-1,TILE-1);
+      }
+    }
+  }
+
+  // ---------- Main loop ----------
   function update(dt){
     if (gameOver) return;
 
     if (player.iFrames>0) player.iFrames = Math.max(0, player.iFrames-dt);
 
-    // cutscene: walk to Alena
+    // Cutscene after crossing flag line: walk to castle
     if (cutscene){
-      player.vx = 170;
+      player.vx = 180;
       player.vy += GRAV*dt;
       collideAndSlide(dt);
 
-      if (player.x > castle.x - 90){
+      if (player.x > castle.x - 100){
         player.vx = 0;
         gameOver = true;
       }
@@ -1182,12 +1251,20 @@
     handleInteractions();
     updateFX(dt);
 
-    // finish
-    if (reachedFlag()){
-      cutscene = true;
-      player.x = pole.x - 18;
-      player.vx = 170;
+    // FLAG LINE trigger
+    if (!flagTriggered && player.x + pW() >= FLAG_LINE_X){
+      flagTriggered = true;
+      // stop spawns, clear queues, freeze obstacles (we just stop updating them)
       spawnQueue.length = 0;
+
+      // show overlay message + score
+      overlayScore.textContent = `Счёт: ${score}`;
+      overlay.style.display = "flex";
+
+      // start cutscene walking to castle
+      cutscene = true;
+      // small push so he clearly enters the zone
+      player.vx = 180;
     }
 
     infoEl.textContent = `Счёт:${score} • ${stages[player.stage].name} • Жизни:${player.lives} • Friends:${obstacles.length}`;
@@ -1198,6 +1275,7 @@
     drawBackground();
     drawTiles();
     drawLandmarks();
+    drawFlagLine();
     drawObstacles();
     drawFX();
     drawCastle();
@@ -1205,7 +1283,7 @@
     drawHUD();
   }
 
-  function reset(){
+  function resetToGame(){
     if (!started) return;
     player.x=70; player.y=0; player.vx=0; player.vy=0;
     player.stage=0; player.lives=3; player.iFrames=0;
@@ -1216,6 +1294,8 @@
     score=0;
 
     gameOver=false; cutscene=false;
+    flagTriggered=false;
+    overlay.style.display="none";
 
     timeSinceStart=0;
     spawnIndex=0;
@@ -1243,7 +1323,7 @@
     hudEl.classList.remove("hidden");
     canvas.style.display="block";
     started=true;
-    reset();
+    resetToGame();
   });
 
 })();
